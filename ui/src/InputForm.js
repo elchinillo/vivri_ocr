@@ -27,7 +27,7 @@ class InputForm extends Component {
         let file = e.target.files[0];
 
         reader.onloadend = (e) => {
-            this.props.onImageReady(e.target.result);
+            this.props.onImageReady(e.target.result, file.type);
         };
 
         reader.readAsArrayBuffer(file)

@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import InputForm from './InputForm';
 import Summary from './Summary';
+import OcrStore from './OcrStore';
 
 class App extends Component {
   constructor() {
@@ -15,6 +16,7 @@ class App extends Component {
       this.requestOcr = this.requestOcr.bind(this);
       this.parseText = this.parseText.bind(this);
       this.reset = this.reset.bind(this);
+      this.onOcrFinish = this.onOcrFinish.bind(this);
   }
 
   render() {
@@ -23,7 +25,7 @@ class App extends Component {
     if (this.state.loading) {
         imagePanel = (
             <div>
-                <img className="box-loader" src="/box.gif" /> Subiendo imagen al servidor...
+                <img alt="OCR en proceso" className="box-loader" src="/box.gif" /> Subiendo {this.state.docType} al servidor...
             </div>
         );
     }
@@ -54,38 +56,63 @@ class App extends Component {
       this.setState({loading: false, items: {}, lastOcr: 'No se ha cargado una imagen'});
   }
 
-  requestOcr(file) {
-    this.setState({loading: true, lastOcr: 'Esperando OCR desde el servidor...'});
+  requestOcr(file, contentType) {
+    this.setState({
+        loading: true,
+        lastOcr: 'Esperando OCR desde el servidor...',
+        docType: /image/.test(contentType)?'imagen':'documento'
+    });
 
-    var uploadRequest = new Request(`${window.location.origin}/ocr`, {method: 'POST', body: file});
+    const uploadRequest = new Request(`${window.location.origin}/ocr`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': contentType
+        },
+        body: file
+    });
 
     fetch(uploadRequest).then(response => {
-        response.text().then(this.parseText);
+        if (response.status!=200) {
+            alert('Ooops... algo ha salido mal en el servidor');
+            this.reset();
+            return;
+        }
+
+        response.text().then((uuid) => {
+            OcrStore.subscribe(uuid, this.parseText, this.onOcrFinish);
+        });
     });
   }
 
   parseText(ocrText) {
       this.setState({lastOcr: ocrText});
 
-      let lineRegex = /^([^\s+]+)\s+(.+?)\s+(\d+)$/;
+      let lineRegex = /^([^\s]+)\s+(.+?)\s+(\d+)$/;
       let lines = ocrText.split('\n');
 
-      let idx = lines.findIndex(line => /Numero\s+de\s+Producto/.test(line)) + 1;
+      let idx = lines.findIndex(line => /Numero\s+de\s+Producto|Nombre\s+de\s+Producto|Cantidad/.test(line)) + 1;
 
+      let items = Object.assign({}, this.state.items);
       for (let n=lines.length ; idx<n && lines[idx].trim() ; idx++) {
-          let line = lines[idx].trim();
-          let match = lineRegex.exec(line);
+          let initialLine = lines[idx].trim();
+          let line;
+          let match = lineRegex.exec(initialLine);
 
           while (!match) {
-              line = prompt(`"${line}" no es una linea valida. Ayudame`);
+              line = prompt('Ayudame a entender la siguiente línea:', line || initialLine);
+              line = line ? line.trim() : line;
               match = lineRegex.exec(line);
           }
 
-          if (!this.state.items[match[1]]) this.state.items[match[1]] = {label: match[2], count: 0};
-          this.state.items[match[1]].count += +match[3];
+          if (!items[match[1]]) items[match[1]] = {label: match[2], count: 0};
+          items[match[1]].count += +match[3];
       }
 
-      this.setState({loading: false, items: this.state.items});
+      this.setState({items: items});
+  }
+
+  onOcrFinish() {
+      this.setState({loading: false});
   }
 }
 
