@@ -3,6 +3,6 @@
         "node": "4.0.0"
     },
     "scripts": {
-        "postinstall": "cd ui/ && npm install --dev && npm run build && cd ../"
+        "heroku-postbuild": "cd ui/ && npm install --dev && npm run build && cd ../"
     }
 }
