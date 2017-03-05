@@ -87,6 +87,6 @@ def disconnect():
     print 'Disconnected from client {}'.format(request.sid)
 
 if __name__ == "__main__":
-    http_port = os.environ['PORT'] or 3333
+    http_port = int(os.environ['PORT']) or 3333
     print 'Listening on port {}'.format(http_port)
     socketio.run(app, host='0.0.0.0', port=http_port)
