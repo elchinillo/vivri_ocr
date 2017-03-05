@@ -1,0 +1,6 @@
+Pillow
+pytesseract
+flask
+python-socketio
+flask-socketio
+wand
