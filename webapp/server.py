@@ -12,7 +12,7 @@ from ocr import get_text_from_image
 
 app = Flask(__name__, static_folder='../ui/build/static', static_url_path='/static')
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'events')
-app.config['DEBUG'] = os.environ['DEV']=='1'
+app.config['DEBUG'] = os.environ.get('DEV')=='1'
 app.config['PORT'] = 3333
 #app.config['SECRET_KEY'] = str(uuid.uuid5(uuid.NAMESPACE_DNS, 'vivri_ocr_201702'))
 
