@@ -39,14 +39,14 @@ def save_file():
 
         with Image(file=BytesIO(request.data), resolution=900) as pdfdoc:
             with pdfdoc.convert('jpeg') as png_pages:
-                print('pages = ', len(png_pages.sequence))
                 for idx, png in enumerate(png_pages.sequence):
                     img = Image(png)
                     img.compression_quality = 100
 
                     img_filename = os.path.join(event_path, 'image{}.jpg'.format(idx+1))
-                    print img_filename
                     img.save(filename=img_filename)
+
+                print '{} images extracted from PDF'.format(len(png_pages.sequence))
     else:
         return 'Not a valid file', 400
 
